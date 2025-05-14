@@ -1,0 +1,4 @@
+debug: false
+model: gpt-4o
+provider:
+  type: Azure

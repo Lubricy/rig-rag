@@ -85,6 +85,10 @@ pub struct Settings {
     model: String,
 }
 
+pub trait Builder {
+    fn build<M: completion::CompletionModel>(self, builder: AgentBuilder<M>) -> AgentBuilder<M>;
+}
+
 impl Settings {
     pub fn new() -> Result<Self, ConfigError> {
         let s = Config::builder()
@@ -94,15 +98,11 @@ impl Settings {
         s.try_deserialize()
     }
 
-    pub fn agent(&self) -> SAgent {
+    pub fn agent(&self, builder: impl Builder) -> SAgent {
         match &self.provider {
-            Provider::OpenAI {  } => SAgent::OpenAI(build(openai::Client::from_env().agent(&self.model))),
-            Provider::Anthropic {  } => SAgent::Anthropic(build(anthropic::Client::from_env().agent(&self.model))),
-            Provider::Azure {  } => SAgent::Azure(build(azure::Client::from_env().agent(&self.model))),
+            Provider::OpenAI {  } => SAgent::OpenAI(builder.build(openai::Client::from_env().agent(&self.model)).build()),
+            Provider::Anthropic {  } => SAgent::Anthropic(builder.build(anthropic::Client::from_env().agent(&self.model)).build()),
+            Provider::Azure {  } => SAgent::Azure(builder.build(azure::Client::from_env().agent(&self.model)).build()),
         }
     }
-}
-
-fn build<M: completion::CompletionModel>(builder: AgentBuilder<M>) -> Agent<M> {
-    builder.preamble("you are a priate.").build()
 }

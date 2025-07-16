@@ -1,5 +1,4 @@
 use std::sync::Arc;
-
 use anyhow::Result;
 use rig::completion::Prompt;
 use rig::Embed;
@@ -9,14 +8,13 @@ use rig::{
     embeddings::{embedding::EmbeddingModelDyn, EmbeddingModel, EmbeddingsBuilder},
     vector_store::in_memory_store::InMemoryVectorStore,
 };
-
 #[derive(Clone)]
 pub struct EmbeddingModelHandle<'a> {
-    pub inner: Arc<dyn EmbeddingModelDyn + 'a>,
+    inner: Arc<dyn EmbeddingModelDyn + 'a>,
 }
 
 impl EmbeddingModel for EmbeddingModelHandle<'_> {
-    const MAX_DOCUMENTS: usize = 10;
+    const MAX_DOCUMENTS: usize = 96;
 
     fn ndims(&self) -> usize {
         return self.inner.ndims();
@@ -30,6 +28,14 @@ impl EmbeddingModel for EmbeddingModelHandle<'_> {
     }
 }
 
+impl<'a> From<Box<dyn EmbeddingModelDyn + 'a>> for EmbeddingModelHandle<'a> {
+    fn from(source: Box<dyn EmbeddingModelDyn + 'a>) -> Self {
+        Self {
+            inner: source.into()
+        }
+    }
+}
+
 #[derive(Embed, Serialize, Clone, Debug, Eq, PartialEq, Default)]
 struct WordDefinition {
     id: String,
@@ -40,9 +46,7 @@ struct WordDefinition {
 #[tokio::main]
 async fn main() -> Result<()> {
     let client = DynClientBuilder::new();
-    let embedding_model = EmbeddingModelHandle {
-        inner: client.embeddings("azure", "text-embedding-3-large")?.into()
-    };
+    let embedding_model: EmbeddingModelHandle = client.embeddings("azure", "text-embedding-3-large")?.into();
     let embeddings = EmbeddingsBuilder::new(embedding_model.clone())
         .documents(vec![
             WordDefinition {

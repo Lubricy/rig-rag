@@ -46,7 +46,7 @@ struct WordDefinition {
 #[tokio::main]
 async fn main() -> Result<()> {
     let client = DynClientBuilder::new();
-    let embedding_model: EmbeddingModelHandle = client.embeddings("azure", "text-embedding-3-large")?.into();
+    let embedding_model: EmbeddingModelHandle = client.embeddings("azure", std::env::var("AZURE_EMBEDDING_MODEL")?.as_str())?.into();
     let embeddings = EmbeddingsBuilder::new(embedding_model.clone())
         .documents(vec![
             WordDefinition {
@@ -81,7 +81,7 @@ async fn main() -> Result<()> {
 
     // Create vector store index
     let index = vector_store.index(embedding_model.clone());
-    let rag_agent = client.agent("azure", "gpt-4.1")?
+    let rag_agent = client.agent("azure", std::env::var("AZURE_LLM_MODEL")?.as_str())?
                           .preamble("
             You are a dictionary assistant here to assist the user in understanding the meaning of words.
             You will find additional non-standard word definitions that could be useful below.
